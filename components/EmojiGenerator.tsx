@@ -61,7 +61,7 @@ export default function EmojiGenerator() {
       <div className="mb-4 text-center">
         <p className="text-sm text-gray-500">Enter a word to find a matching emoji</p>
         <p className="text-xs text-muted-foreground mt-2 italic">
-          Was using Replicate SDXL emoji API which was generating iPhone equivalent aesthetic emoji but sadly :( it's paid now so had to change it to emoji-api.com
+          Was using Replicate SDXL emoji API which was generating iPhone equivalent aesthetic emoji but sadly :( it&apos;s paid now so had to change it to emoji-api.com
         </p>
       </div>
       <form onSubmit={handleSubmit} className="flex gap-2">
