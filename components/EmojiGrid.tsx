@@ -1,66 +1,17 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useEffect } from 'react';
 import Image from 'next/image';
 import { Card } from './ui/card';
 import { useEmojiStore } from '../lib/emojiStore';
 import { Download, Heart } from 'lucide-react';
 import { Button } from './ui/button';
 import { useAuth } from '@clerk/nextjs';
-
-interface Emoji {
-  id: number;
-  image_url: string;
-  prompt: string;
-  likes_count: number;
-  creator_user_id: string;
-  isLiked?: boolean;
-}
+import { toast } from 'sonner';
 
 export default function EmojiGrid() {
-  const [emojis, setEmojis] = useState<Emoji[]>([]);
-  const newEmoji = useEmojiStore((state) => state.newEmoji);
-  const { isSignedIn, userId } = useAuth();
-
-  const fetchEmojis = useCallback(async () => {
-    console.log('Fetching emojis');
-    try {
-      const timestamp = new Date().getTime();
-      const response = await fetch(`/api/emojis?t=${timestamp}`);
-      const data = await response.json();
-      console.log('Fetched emojis:', data);
-      if (Array.isArray(data.emojis)) {
-        if (isSignedIn && userId) {
-          console.log('Fetching user likes');
-          const likesResponse = await fetch(`/api/user-likes?userId=${userId}&t=${timestamp}`);
-          const likesData = await likesResponse.json();
-          console.log('User likes:', likesData);
-          const likedEmojiIds = new Set(likesData.likes.map((like: { emoji_id: number }) => like.emoji_id));
-          
-          setEmojis(data.emojis.map((emoji: Emoji) => ({
-            ...emoji,
-            isLiked: likedEmojiIds.has(emoji.id)
-          })));
-        } else {
-          setEmojis(data.emojis.map((emoji: Emoji) => ({ ...emoji, isLiked: false })));
-        }
-      } else {
-        console.error('Unexpected data shape:', data);
-      }
-    } catch (error) {
-      console.error('Error fetching emojis:', error);
-    }
-  }, [isSignedIn, userId]);
-
-  useEffect(() => {
-    fetchEmojis();
-  }, [fetchEmojis]);
-
-  useEffect(() => {
-    if (newEmoji) {
-      setEmojis((prevEmojis) => [{ ...newEmoji, isLiked: false }, ...prevEmojis]);
-    }
-  }, [newEmoji]);
+  const { emojis, toggleLike } = useEmojiStore();
+  const { isSignedIn } = useAuth();
 
   const handleDownload = (imageUrl: string, prompt: string) => {
     fetch(imageUrl)
@@ -78,41 +29,17 @@ export default function EmojiGrid() {
       .catch(error => console.error('Error downloading image:', error));
   };
 
-  const handleLike = async (emojiId: number) => {
+  const handleLike = async (emojiId: string) => {
     if (!isSignedIn) {
-      console.log('User not signed in, cannot like emoji');
+      toast.error('Please sign in to like emojis');
       return;
     }
 
     try {
-      console.log('Sending like request for emoji:', emojiId);
-      const response = await fetch('/api/like-emoji', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ emojiId }),
-      });
-      const data = await response.json();
-      console.log('Received data from like-emoji:', data);
-      if (data.success) {
-        setEmojis(prevEmojis =>
-          prevEmojis.map(emoji =>
-            emoji.id === emojiId
-              ? { 
-                  ...emoji, 
-                  likes_count: data.likes_count,
-                  isLiked: data.action === 'liked'
-                }
-              : emoji
-          )
-        );
-        console.log('Updated emojis after like:', emojis);
-      } else {
-        throw new Error(data.error || 'Failed to update likes');
-      }
+      toggleLike(emojiId);
     } catch (error) {
-      console.error('Error updating likes:', error);
+      console.error('Error toggling like:', error);
+      toast.error('Failed to update like');
     }
   };
 
@@ -141,16 +68,25 @@ export default function EmojiGrid() {
                 variant="ghost"
                 size="icon"
                 onClick={() => handleLike(emoji.id)}
-                className={`text-white ${emoji.isLiked ? 'bg-red-500' : ''}`}
+                className={`text-white hover:bg-red-500/20 ${emoji.isLiked ? 'bg-red-500' : ''}`}
               >
-                <Heart size={20} fill={emoji.isLiked ? 'currentColor' : 'none'} />
+                <Heart 
+                  size={20} 
+                  className={emoji.isLiked ? 'text-white' : 'text-white'} 
+                  fill={emoji.isLiked ? 'currentColor' : 'none'} 
+                />
               </Button>
             </div>
           </div>
           <div className="mt-2 flex justify-between items-center text-sm">
             <p className="truncate flex-grow">{emoji.prompt}</p>
             <span className="ml-2 flex items-center">
-              <Heart size={14} className="mr-1" /> {emoji.likes_count}
+              <Heart 
+                size={14} 
+                className={`mr-1 ${emoji.isLiked ? 'text-red-500' : ''}`}
+                fill={emoji.isLiked ? 'currentColor' : 'none'}
+              /> 
+              {emoji.likes_count}
             </span>
           </div>
         </Card>

@@ -8,47 +8,48 @@ import { Card } from './ui/card';
 import { Loader2 } from 'lucide-react';
 import { useEmojiStore } from '../lib/emojiStore';
 
+const EMOJI_API_KEY = process.env.NEXT_PUBLIC_EMOJI_API_KEY;
+
 export default function EmojiGenerator() {
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, userId } = useAuth();
   const addNewEmoji = useEmojiStore((state) => state.addNewEmoji);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Submitting emoji generation form');
+    console.log('Submitting emoji search');
     if (!isSignedIn) {
       console.log('User not signed in');
-      // Handle not signed in state
       return;
     }
     setIsGenerating(true);
     try {
-      console.log('Sending request to generate emoji');
-      const response = await fetch('/api/generate-emoji', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ prompt }),
-      });
-      const data = await response.json();
-      console.log('Received response:', data);
-      if (data.success) {
-        console.log('Emoji generated successfully');
-        addNewEmoji({
-          id: data.id,
-          image_url: data.image_url,
+      console.log('Searching for emoji');
+      const response = await fetch(
+        `https://emoji-api.com/emojis?search=${encodeURIComponent(prompt)}&access_key=${EMOJI_API_KEY}`
+      );
+      const emojis = await response.json();
+      
+      if (emojis && emojis.length > 0) {
+        const emoji = emojis[0];
+        console.log('Emoji found:', emoji);
+        
+        const newEmoji = {
+          id: emoji.codePoint,
+          image_url: `https://cdn.jsdelivr.net/joypixels/assets/6.6/png/unicode/128/${emoji.codePoint.toLowerCase()}.png`,
           prompt: prompt,
           likes_count: 0,
-          creator_user_id: data.creator_user_id
-        });
+          creator_user_id: userId || 'anonymous'
+        };
+
+        addNewEmoji(newEmoji);
         setPrompt('');
       } else {
-        throw new Error(data.error || 'Failed to generate emoji');
+        throw new Error('No emoji found for this prompt');
       }
     } catch (error) {
-      console.error('Error generating emoji:', error);
+      console.error('Error finding emoji:', error);
       // Handle error (e.g., show error message to user)
     } finally {
       setIsGenerating(false);
@@ -57,17 +58,23 @@ export default function EmojiGenerator() {
 
   return (
     <Card className="p-6 mb-8">
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <div className="mb-4 text-center">
+        <p className="text-sm text-gray-500">Enter a word to find a matching emoji</p>
+        <p className="text-xs text-muted-foreground mt-2 italic">
+          Was using Replicate SDXL emoji API which was generating iPhone equivalent aesthetic emoji but sadly :( it's paid now so had to change it to emoji-api.com
+        </p>
+      </div>
+      <form onSubmit={handleSubmit} className="flex gap-2">
         <Input
           type="text"
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          placeholder="Enter emoji prompt"
+          placeholder="Enter a word (e.g., 'happy', 'cat', 'sun')"
           disabled={isGenerating}
-          className="w-full"
+          className="flex-1"
         />
-        <Button type="submit" disabled={isGenerating}>
-          {isGenerating ? 'Generating...' : 'Generate Emoji'}
+        <Button type="submit" disabled={isGenerating} size="sm">
+          {isGenerating ? 'Finding...' : 'Generate'}
         </Button>
       </form>
       {isGenerating && (

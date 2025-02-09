@@ -1,7 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     images: {
-      domains: ['replicate.delivery', 'xfpoygmqmrkvnzovtlgu.supabase.co'],
+      remotePatterns: [
+        {
+          protocol: 'https',
+          hostname: 'cdn.jsdelivr.net',
+          pathname: '/joypixels/assets/**',
+        },
+      ],
     },
     webpack: (config) => {
       config.resolve.fallback = { ...config.resolve.fallback, process: false };

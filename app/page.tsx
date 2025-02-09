@@ -1,12 +1,15 @@
-import EmojiGenerator from '../components/EmojiGenerator';
+import { AuroraBackground } from "@/components/ui/aurora-background";
+import EmojiGenerator from "@/components/EmojiGenerator";
 import EmojiGrid from '../components/EmojiGrid';
 
 export default function Home() {
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8 text-center">Emoji Maker</h1>
-      <EmojiGenerator />
-      <EmojiGrid />
-    </div>
+    <AuroraBackground className="min-h-screen">
+      <div className="container mx-auto px-4">
+        <h1 className="text-4xl font-bold text-center mb-8">Emoji Generator</h1>
+        <EmojiGenerator />
+        <EmojiGrid />
+      </div>
+    </AuroraBackground>
   );
 }

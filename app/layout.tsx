@@ -6,6 +6,7 @@ import {
 } from '@clerk/nextjs'
 import Header from "@/components/headers";
 import UserProfileInitializer from '../components/UserProfileInitializer';
+import { Toaster } from 'sonner';
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -37,6 +38,7 @@ export default function RootLayout({
           <UserProfileInitializer />
           <Header />
           {children}
+          <Toaster position="top-center" />
         </body>
       </html>
     </ClerkProvider>
