@@ -36,7 +36,13 @@ export default function EmojiGenerator() {
       console.log('Received response:', data);
       if (data.success) {
         console.log('Emoji generated successfully');
-        addNewEmoji({ image_url: data.image_url });
+        addNewEmoji({
+          id: data.id,
+          image_url: data.image_url,
+          prompt: prompt,
+          likes_count: 0,
+          creator_user_id: data.creator_user_id
+        });
         setPrompt('');
       } else {
         throw new Error(data.error || 'Failed to generate emoji');
