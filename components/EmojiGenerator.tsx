@@ -25,20 +25,6 @@ export default function EmojiGenerator() {
     setIsGenerating(true);
     try {
       console.log('Sending request to generate emoji');
-      const imageUrl = await generateEmoji(prompt);
-      console.log('Emoji generated successfully');
-      addNewEmoji({ imageUrl });
-      setPrompt('');
-    } catch (error) {
-      console.error('Error generating emoji:', error);
-      // Handle error (e.g., show error message to user)
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  const generateEmoji = async (prompt: string) => {
-    try {
       const response = await fetch('/api/generate-emoji', {
         method: 'POST',
         headers: {
@@ -46,21 +32,20 @@ export default function EmojiGenerator() {
         },
         body: JSON.stringify({ prompt }),
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
       const data = await response.json();
-      
-      if (!data.success) {
+      console.log('Received response:', data);
+      if (data.success) {
+        console.log('Emoji generated successfully');
+        addNewEmoji({ image_url: data.image_url });
+        setPrompt('');
+      } else {
         throw new Error(data.error || 'Failed to generate emoji');
       }
-
-      return data.imageUrl;
     } catch (error) {
       console.error('Error generating emoji:', error);
-      throw error;
+      // Handle error (e.g., show error message to user)
+    } finally {
+      setIsGenerating(false);
     }
   };
 
